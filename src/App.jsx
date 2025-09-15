@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PackageCard from './components/PackageCard';
 import Truck from './components/Truck';
 import GameResult from './components/GameResult';
-import Map from './components/map';
+import Map from './components/Map';
 import LevelComplete from './components/LevelComplete';
 import { knapsack } from './utils/knapsack';
 
@@ -39,7 +39,7 @@ const App = () => {
     return newPackages;
   };
 
-  // Initialize game when level/gameState changes
+  // Initialize game when level changes and gameState is playing
   useEffect(() => {
     if (gameState === 'playing') {
       setPackages(generatePackages(level));
@@ -101,18 +101,46 @@ const App = () => {
 
   // Continue to next level
   const continueToNextLevel = () => {
-    if (isMoving) return;
+    if (isMoving || gameState === 'moving') return;
+    
+    console.log('Starting move to next level');
     setGameState('moving');
     setIsMoving(true);
+    
+    // Fallback mechanism - if stuck in moving state for too long, force completion
+    setTimeout(() => {
+      if (gameState === 'moving') {
+        console.log('Fallback: Forcing level completion after 5 seconds');
+        handleLocationReached();
+      }
+    }, 5000);
   };
 
-  // Truck reached new location
+  // Truck reached new location - FIXED to prevent multiple calls
   const handleLocationReached = () => {
-    if (!isMoving) return;
+    console.log('handleLocationReached called', { gameState, isMoving });
+    
+    // Only proceed if we're actually in moving state
+    if (gameState !== 'moving' || !isMoving) {
+      console.log('Ignoring callback - not in moving state');
+      return;
+    }
+    
+    console.log('Processing location reached');
+    
+    // Update states in the correct order
     setIsMoving(false);
-    setLevel(prev => prev + 1);
+    setLevel(prev => {
+      console.log('Level changing from', prev, 'to', prev + 1);
+      return prev + 1;
+    });
     setCapacity(prev => prev + 2);
-    setGameState('playing');
+    
+    // Small delay to ensure state updates are processed
+    setTimeout(() => {
+      console.log('Setting gameState to playing');
+      setGameState('playing');
+    }, 200);
   };
 
   // Replay current level
@@ -168,6 +196,7 @@ const App = () => {
           <div style={statBoxStyle}>🏆 Level: {level}</div>
           <div style={statBoxStyle}>🪙 Coins: {totalCoins}</div>
           <div style={statBoxStyle}>📍 {currentLocation}</div>
+          <div style={statBoxStyle}>🚛 Capacity: {capacity}kg</div>
         </div>
       </div>
 
@@ -175,6 +204,7 @@ const App = () => {
       <Map 
         currentLevel={level}
         isMoving={isMoving}
+        gameState={gameState}
         onLocationReached={handleLocationReached}
       />
 
@@ -250,6 +280,7 @@ const App = () => {
         <div style={{ textAlign: 'center', padding: '50px', fontSize: '16px', color: '#333' }}>
           <div style={{ fontSize: '50px', marginBottom: '20px' }}>🚚💨</div>
           <p>Traveling to {nextLocation}...</p>
+          <p style={{ fontSize: '12px', color: '#666' }}>Level {level} → Level {level + 1}</p>
           <div style={{ width: '200px', height: '20px', background: '#ddd', margin: '20px auto', borderRadius: '10px', overflow: 'hidden', border: '2px solid #333' }}>
             <div style={{ height: '100%', background: 'linear-gradient(90deg, #32cd32, #228b22)', width: '100%', animation: 'loadingBar 2s ease-in-out' }}></div>
           </div>
@@ -272,7 +303,7 @@ const App = () => {
       {gameState === 'playing' && (
         <div style={instructionsBoxStyle}>
           <p style={instructionsTextStyle}>🎯 <strong>Goal:</strong> Maximize profit by picking packages!</p>
-          <p style={instructionsTextStyle}>⚠️ Don’t exceed capacity or you get $0!</p>
+          <p style={instructionsTextStyle}>⚠️ Don't exceed capacity or you get $0!</p>
           <p style={instructionsTextStyle}>🗺️ Complete deliveries to unlock new locations!</p>
           <p style={instructionsTextStyle}>💰 Earn coins based on performance!</p>
         </div>

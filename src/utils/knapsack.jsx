@@ -1,4 +1,8 @@
 export function knapsack(packages, capacity) {
+  if (!packages || packages.length === 0 || capacity <= 0) {
+    return { maxProfit: 0, chosen: [] };
+  }
+
   const n = packages.length;
   const dp = Array(n + 1)
     .fill(null)

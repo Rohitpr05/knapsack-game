@@ -10,6 +10,7 @@ const LevelComplete = ({
 }) => {
   const [showFireworks, setShowFireworks] = useState(false);
   const [coins, setCoins] = useState([]);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
   const isPerfect = userProfit === maxProfit;
   const efficiency = maxProfit > 0 ? ((userProfit / maxProfit) * 100).toFixed(1) : 0;
@@ -47,6 +48,29 @@ const LevelComplete = ({
       }, 3000);
     }
   }, [isPerfect]);
+
+  // Prevent double-clicks on buttons
+  const handleContinue = () => {
+    if (buttonsDisabled) return;
+    setButtonsDisabled(true);
+    onContinue();
+    
+    // Re-enable buttons after a delay in case something goes wrong
+    setTimeout(() => {
+      setButtonsDisabled(false);
+    }, 3000);
+  };
+
+  const handleReplay = () => {
+    if (buttonsDisabled) return;
+    setButtonsDisabled(true);
+    onReplay();
+    
+    // Re-enable buttons after a delay
+    setTimeout(() => {
+      setButtonsDisabled(false);
+    }, 1000);
+  };
 
   return (
     <div style={{
@@ -242,54 +266,66 @@ const LevelComplete = ({
           flexWrap: 'wrap'
         }}>
           <button
-            onClick={onContinue}
+            onClick={handleContinue}
+            disabled={buttonsDisabled}
             style={{
               fontFamily: "'Press Start 2P', monospace",
               fontSize: '10px',
               padding: '12px 20px',
-              background: 'linear-gradient(135deg, #32cd32, #228b22)',
+              background: buttonsDisabled ? '#999' : 'linear-gradient(135deg, #32cd32, #228b22)',
               color: 'white',
               border: '4px solid #333',
               borderRadius: '8px',
-              cursor: 'pointer',
+              cursor: buttonsDisabled ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
               textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
-              boxShadow: '4px 4px 0px #000'
+              boxShadow: '4px 4px 0px #000',
+              opacity: buttonsDisabled ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '6px 6px 0px #000';
+              if (!buttonsDisabled) {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '6px 6px 0px #000';
+              }
             }}
             onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0px)';
-              e.target.style.boxShadow = '4px 4px 0px #000';
+              if (!buttonsDisabled) {
+                e.target.style.transform = 'translateY(0px)';
+                e.target.style.boxShadow = '4px 4px 0px #000';
+              }
             }}
           >
             🚚 CONTINUE JOURNEY
           </button>
 
           <button
-            onClick={onReplay}
+            onClick={handleReplay}
+            disabled={buttonsDisabled}
             style={{
               fontFamily: "'Press Start 2P', monospace",
               fontSize: '10px',
               padding: '12px 20px',
-              background: 'linear-gradient(135deg, #ff8c00, #ff6b00)',
+              background: buttonsDisabled ? '#999' : 'linear-gradient(135deg, #ff8c00, #ff6b00)',
               color: 'white',
               border: '4px solid #333',
               borderRadius: '8px',
-              cursor: 'pointer',
+              cursor: buttonsDisabled ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
               textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
-              boxShadow: '4px 4px 0px #000'
+              boxShadow: '4px 4px 0px #000',
+              opacity: buttonsDisabled ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '6px 6px 0px #000';
+              if (!buttonsDisabled) {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '6px 6px 0px #000';
+              }
             }}
             onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0px)';
-              e.target.style.boxShadow = '4px 4px 0px #000';
+              if (!buttonsDisabled) {
+                e.target.style.transform = 'translateY(0px)';
+                e.target.style.boxShadow = '4px 4px 0px #000';
+              }
             }}
           >
             🔄 REPLAY LEVEL

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const Map = ({ currentLevel, isMoving, onLocationReached }) => {
+const Map = ({ currentLevel, isMoving, gameState, onLocationReached }) => {
   const [truckPosition, setTruckPosition] = useState({ x: 10, y: 80 });
   const [animating, setAnimating] = useState(false);
-  const [calledOnce, setCalledOnce] = useState(false); // ✅ new guard
+  const animationRef = useRef(null);
+  const hasCalledCallbackRef = useRef(false);
 
   // Define map locations for each level
   const locations = [
@@ -22,11 +23,18 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
   const currentLocation = locations[(currentLevel - 1) % locations.length];
   const nextLocation = locations[currentLevel % locations.length];
 
+  // Reset callback flag when starting new movement
+  useEffect(() => {
+    if (isMoving && gameState === 'moving') {
+      hasCalledCallbackRef.current = false;
+    }
+  }, [isMoving, gameState]);
+
   // Animate truck movement when moving to next level
   useEffect(() => {
-    if (isMoving && nextLocation) {
+    // Only animate if we're in moving state and have a next location
+    if (isMoving && gameState === 'moving' && nextLocation) {
       setAnimating(true);
-      setCalledOnce(false); // ✅ reset for new move
 
       const startX = truckPosition.x;
       const startY = truckPosition.y;
@@ -39,6 +47,8 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
+        
+        // Smooth easing function
         const easeProgress = 1 - Math.pow(1 - progress, 3);
 
         setTruckPosition({
@@ -47,19 +57,29 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
         });
 
         if (progress < 1) {
-          requestAnimationFrame(animate);
+          animationRef.current = requestAnimationFrame(animate);
         } else {
+          // Animation completed
           setAnimating(false);
-          if (!calledOnce && onLocationReached) {
-            setCalledOnce(true); // ✅ prevent multiple calls
+          
+          // Call the callback only once
+          if (!hasCalledCallbackRef.current && onLocationReached) {
+            hasCalledCallbackRef.current = true;
             onLocationReached();
           }
         }
       };
 
-      requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(animate);
+
+      // Cleanup function
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      };
     }
-  }, [isMoving, nextLocation]);
+  }, [isMoving, gameState, nextLocation, onLocationReached, truckPosition.x, truckPosition.y]);
 
   // Generate road paths between locations
   const generateRoads = () => {
@@ -130,7 +150,7 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
               filter: isCompleted ? 'grayscale(50%)' : 'none',
               transform: isCurrentLocation ? 'scale(1.2)' : 'scale(1)',
               transition: 'all 0.3s ease',
-              animation: isNextLocation ? 'pulse 1s infinite' : 'none'
+              animation: (isNextLocation && gameState === 'moving') ? 'pulse 1s infinite' : 'none'
             }}>
               {location.emoji}
             </div>
@@ -201,7 +221,7 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
         fontFamily: "'Press Start 2P', monospace"
       }}>
         📍 Level {currentLevel}: {currentLocation.name}
-        {isMoving && (
+        {gameState === 'moving' && (
           <div style={{ marginTop: '5px', color: '#ffd700' }}>
             🚚 Moving to {nextLocation?.name}...
           </div>
@@ -209,7 +229,7 @@ const Map = ({ currentLevel, isMoving, onLocationReached }) => {
       </div>
 
       {/* Movement indicator */}
-      {isMoving && (
+      {gameState === 'moving' && (
         <div style={{
           position: 'absolute',
           bottom: '10px',
