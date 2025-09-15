@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PackageCard from './components/PackageCard';
 import Truck from './components/Truck';
 import GameResult from './components/GameResult';
-import Map from './components/Map';
+import Map from './components/map';
 import LevelComplete from './components/LevelComplete';
 import { knapsack } from './utils/knapsack';
 
